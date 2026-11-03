@@ -365,12 +365,41 @@ button.mission{width:100%;background:none;border-left:0;border-right:0;border-bo
 .cd span{font-family:var(--f-display);font-weight:600;font-size:clamp(120px,24vw,220px);color:var(--ivory);animation:cdIn .8s var(--ease) both;text-shadow:0 10px 40px rgba(0,0,0,.25)}
 @keyframes cdIn{0%{opacity:0;transform:scale(1.4)}30%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:scale(.85)}}
 .pairs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}
-.pair{position:relative;aspect-ratio:1.3;perspective:900px}
+.pair{position:relative;aspect-ratio:1.08;perspective:900px}
 .pair .card-inner{transition:transform .7s var(--ease)}
 .pair.flip .card-inner{transform:rotateY(180deg)}
 .pair .face{padding:10px}
 .pair .face-front{background:var(--field) var(--grain);color:var(--ivory)}
 .pair .face-front .seal{position:static;margin:0;width:36px;height:36px}
+.pair .face-back .gs{font-size:11.5px;margin-top:6px;color:var(--sub)}
+.pair.hit .face-back{background:#FBF6EA;box-shadow:0 0 0 1.5px rgba(201,170,110,.9),0 0 12px 1px rgba(201,170,110,.22);animation:glow 3.2s ease-in-out infinite}
+.pair.hit .face-back .gs{color:var(--gold-deep);font-weight:700}
+.pair.miss .face-back{filter:grayscale(1);opacity:.55}
+@keyframes glow{50%{box-shadow:0 0 0 1.5px rgba(201,170,110,.9),0 0 18px 3px rgba(201,170,110,.32)}}
+.fin-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.fin-head h2{font-family:var(--f-display);font-weight:600;font-size:clamp(26px,3.6vw,38px);letter-spacing:-.02em}
+.fin-head p{color:var(--sub-on-dark);margin-top:6px;font-size:14px}
+.view-seg{background:rgba(248,246,240,.1);min-width:200px}
+.view-seg button{color:var(--sub-on-dark)}
+.view-seg button[aria-pressed="true"]{background:var(--ivory);color:var(--forest)}
+.aw-h{font-family:var(--f-display);font-weight:600;font-size:19px;color:var(--gold);margin-top:34px}
+.aw-sub{font-size:13px;color:var(--sub-on-dark);margin-top:4px}
+.awards.duo{grid-template-columns:1fr 1fr;align-items:stretch}
+.award .medal.m2{background:radial-gradient(circle at 35% 30%,#F4F4F0,#BFC3BC 50%,#8E938B)}
+.award .medal.m3{background:radial-gradient(circle at 35% 30%,#EBC4A0,#B9814F 50%,#8A5A33)}
+@media (max-width:767px){.awards.duo{grid-template-columns:1fr}.view-seg{width:100%}}
+.relmap{margin-top:22px;border-radius:var(--r-tile);border:1px solid rgba(248,246,240,.14);background:var(--forest-2);padding:clamp(8px,3vw,28px)}
+.relmap svg{display:block;width:100%;max-width:640px;height:auto;margin:0 auto}
+.relmap .edge{fill:none;stroke:rgba(248,246,240,.55);stroke-width:2;transition:stroke-dashoffset .7s var(--ease)}
+.relmap .edge.gold{stroke:rgba(201,170,110,.85);stroke-width:2.2}
+.relmap text{font-family:var(--f-body);font-size:17px;fill:var(--ivory)}
+.relmap text.miss{fill:#9DA29A}
+.relmap .legend{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;font-size:12.5px;color:var(--sub-on-dark);margin-top:10px}
+.relmap .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.act.del{margin-left:auto;color:var(--err)}
+.cmt .cdel{margin-left:auto;border:0;background:none;color:var(--err);font-size:16px;min-width:32px;min-height:28px;border-radius:8px}
+.cmt .cdel:hover{background:rgba(184,64,42,.1)}
+.real{font-weight:700}
 .pair .face-back .g{font-size:12.5px;color:var(--sub)}
 .pair .face-back .r{font-family:var(--f-kserif);font-weight:700;font-size:17px;margin-top:2px}
 .pair .face-back .ar{font-size:11px;color:var(--ribbon);margin:4px 0;font-family:var(--f-display);font-weight:700;letter-spacing:.1em}
@@ -714,6 +743,7 @@ button.mission{width:100%;background:none;border-left:0;border-right:0;border-bo
       <div class="vhead"><svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMaxYMid slice" data-scene="boardHead"></svg>
         <div class="vhead-txt"><h1>Letters</h1><div class="ko">익명 게시판</div><p class="cap">이름 대신 동물 닉네임으로 남는 공간. 힌트, 감사 인사, 수사 일지 모두 환영합니다.</p></div>
       </div>
+      <div id="bNotice" style="margin-top:24px"></div>
       <form class="paper compose" id="compose" novalidate>
         <label class="label" for="postText">익명으로 남기기</label>
         <textarea class="textarea" id="postText" maxlength="300" placeholder="오늘 책상 위에 누가 귤을 두고 갔나요?"></textarea>
@@ -950,7 +980,10 @@ async function connectFirebase(cfg) {
   await new Promise(r => { const un = auth.onAuthStateChanged(() => { un(); r(); }); });
   if (!auth.currentUser) await auth.signInAnonymously();
   A.fbAuth = auth;
-  return firebase.firestore();
+  const db = firebase.firestore();
+  // long polling gets through company proxies and firewalls that break Firestore's streaming connection
+  try { db.settings({experimentalForceLongPolling: true, merge: true}); } catch (e) {}
+  return db;
 }
 function fbIsAdmin() {
   const u = A.fbAuth && A.fbAuth.currentUser, list = ((window.SM_CONFIG || {}).adminEmails || []).map(x => String(x).toLowerCase());
@@ -958,7 +991,7 @@ function fbIsAdmin() {
 }
 
 /* ================= app state ================= */
-function defPriv() { return {openedDraw: null, missions: {}, posts: [], comments: 0, nick: null}; }
+function defPriv() { return {openedDraw: null, missions: {}, posts: [], comments: 0, cids: [], nick: null}; }
 const A = {
   mode: "preview", db: null, fbAuth: null, admin: false, canWrite: true, loaded: {},
   uid: null, aes: null, keys: null, // uid = the logged-in participant
@@ -1078,7 +1111,7 @@ function sparkle(root, n = 16) {
 function paintGlobal() {
   const g = $("#globalNotice"); let h = "";
   if (A.mode === "preview") h = `<div class="notice"><span><b>미리보기 모드</b> · 저장 서버에 연결되지 않아 예시 참가자로 동작합니다. 예시 계정 <b>김하린 / test1234</b>. 새로고침하면 사라집니다.</span></div>`;
-  else if (!A.db) h = `<div class="notice"><span><b>저장 서버에 연결하지 못했어요.</b> ${A.mode === "artifact" ? "claude.ai에 로그인한 상태로 열어 주세요." : "firebase-config.js 설정을 확인해 주세요."}</span></div>`;
+  else if (!A.db) h = `<div class="notice"><span><b>저장 서버에 연결하지 못했어요.</b> ${A.mode === "artifact" ? "claude.ai에 로그인한 상태로 열어 주세요." : String(A.connectErr || "").includes("admin-restricted") || String(A.connectErr || "").includes("operation-not-allowed") ? "Firebase 콘솔 → Authentication → 로그인 방법에서 '익명'을 켜 주세요." : `firebase-config.js 설정을 확인해 주세요.${A.connectErr ? ` (${esc(A.connectErr)})` : ""}`}</span></div>`;
   else if (!A.canWrite) h = `<div class="notice"><span><b>읽기 전용</b> · 이 링크의 권한으로는 참여 내용을 저장할 수 없어요. 관리자에게 참여 권한을 요청해 주세요.</span></div>`;
   g.innerHTML = h; g.hidden = !h;
 }
@@ -1247,16 +1280,21 @@ const nick = i => ANIMALS[(i ?? 0) % ANIMALS.length], ncol = i => ACOL[(i ?? 0) 
 function myNick() { return A.priv.nick ?? null; }
 function likeCount(pid) { let n = 0; for (const u in A.likes) if (A.likes[u] && A.likes[u][pid]) n++; return n; }
 function paintNick() { if (!me()) { $("#nickLbl").innerHTML = `<span class="avatar" style="background:#6E7068">?</span>로그인하면 익명 닉네임으로 쓸 수 있어요`; return; } const n = myNick(); $("#nickLbl").innerHTML = n === null ? `<span class="avatar" style="background:#6E7068">?</span>첫 글을 쓰면 동물 닉네임이 정해져요` : `<span class="avatar" style="background:${ncol(n)}">${nick(n)[0]}</span>익명의 ${nick(n)}로 게시돼요`; }
+// after the reveal, each person's browser publishes the ids of what they wrote, so names appear
+function authorOf(kind, id) { if (!isRevealed()) return null; for (const [pid, r] of Object.entries(A.reveals)) { if (((kind === "p" ? r.posts : r.cids) || []).includes(id) && A.entries[pid]) return pid; } return null; }
 function postHTML(p, open) {
   const mine = (A.priv.posts || []).includes(p.id), liked = !!(A.likes[A.uid] || {})[p.id], cs = A.comments.filter(c => c.post === p.id).sort((a, b) => a.at - b.at);
-  return `<article class="paper post" data-id="${p.id}"><div class="post-head"><span class="avatar" style="background:${ncol(p.nick)}">${nick(p.nick)[0]}</span><div><div class="nm">익명의 ${nick(p.nick)} ${mine ? '<span class="badge badge-ribbon">내 글</span>' : ""}</div><div class="tm">${ago(p.at)}</div></div></div>
+  const au = authorOf("p", p.id), who = au ? `<span class="real">${esc(nameOf(au))}</span> <span class="tm">익명의 ${nick(p.nick)}</span>` : `익명의 ${nick(p.nick)}`;
+  const cmt = c => { const ca = authorOf("c", c.id); return `<div class="cmt" data-cid="${c.id}"><b>${ca ? esc(nameOf(ca)) : `익명의 ${nick(c.nick)}`}</b><span>${esc(c.body)}</span>${A.admin ? `<button type="button" class="cdel" aria-label="댓글 삭제">×</button>` : ""}</div>`; };
+  return `<article class="paper post" data-id="${p.id}"><div class="post-head"><span class="avatar" style="background:${ncol(p.nick)}">${esc(au ? nameOf(au)[0] : nick(p.nick)[0])}</span><div><div class="nm">${who} ${mine ? '<span class="badge badge-ribbon">내 글</span>' : ""}</div><div class="tm">${ago(p.at)}</div></div></div>
     <p class="post-body">${esc(p.body)}</p>
-    <div class="post-acts"><button type="button" class="act like ${liked ? "liked" : ""}" aria-pressed="${liked}" aria-label="좋아요">${HEART}<span class="tnum">${likeCount(p.id)}</span></button><button type="button" class="act cm" aria-expanded="${!!open}">${BUBBLE}<span class="tnum">${cs.length}</span></button></div>
-    <div class="comments" ${open ? "" : "hidden"}>${cs.map(c => `<div class="cmt"><b>익명의 ${nick(c.nick)}</b><span>${esc(c.body)}</span></div>`).join("")}<form class="cmt-form"><label class="sr" for="c-${p.id}">댓글</label><input class="input" id="c-${p.id}" maxlength="120" placeholder="익명으로 댓글 달기"><button class="btn btn-ink btn-sm" type="submit">등록</button></form></div></article>`;
+    <div class="post-acts"><button type="button" class="act like ${liked ? "liked" : ""}" aria-pressed="${liked}" aria-label="좋아요">${HEART}<span class="tnum">${likeCount(p.id)}</span></button><button type="button" class="act cm" aria-expanded="${!!open}">${BUBBLE}<span class="tnum">${cs.length}</span></button>${A.admin ? `<button type="button" class="act del">삭제</button>` : ""}</div>
+    <div class="comments" ${open ? "" : "hidden"}>${cs.map(cmt).join("")}<form class="cmt-form"><label class="sr" for="c-${p.id}">댓글</label><input class="input" id="c-${p.id}" maxlength="120" placeholder="익명으로 댓글 달기"><button class="btn btn-ink btn-sm" type="submit">등록</button></form></div></article>`;
 }
 let boardAnimated = false;
 function paintBoard() {
   paintNick();
+  $("#bNotice").innerHTML = isRevealed() ? `<div class="notice"><span><b>공개 완료</b> · 이제 글쓴이 이름이 함께 보여요. 공개 뒤 아직 접속하지 않은 사람의 글은 익명으로 남아 있다가, 그 사람이 접속하면 이름이 채워집니다.</span></div>` : A.admin ? `<div class="notice"><span><b>관리자</b> · 글과 댓글 옆의 삭제 버튼으로 지울 수 있어요. 한 번 더 눌러야 지워집니다.</span></div>` : "";
   const L = $("#postList");
   if (!A.loaded.posts) { L.className = "posts"; L.innerHTML = `<div class="skel"><i style="width:40%"></i><i></i><i style="width:80%"></i></div>`.repeat(4); return; }
   const openIds = $$(".post", L).filter(p => !$(".comments", p).hidden).map(p => p.dataset.id);
@@ -1274,8 +1312,13 @@ function paintBoard() {
 }
 $$(".tab").forEach(t => t.addEventListener("click", () => { tab = t.dataset.tab; $$(".tab").forEach(x => x.setAttribute("aria-selected", x === t)); boardAnimated = false; paintBoard(); }));
 async function ensureNick() { if (myNick() !== null) return myNick(); const n = Math.floor(secureRand() * ANIMALS.length); await savePriv({nick: n}); return n; }
+function confirmTwice(b, label, again) { if (b.dataset.sure) return true; b.dataset.sure = "1"; const old = b.textContent; b.textContent = again; setTimeout(() => { if (b.isConnected) { delete b.dataset.sure; b.textContent = old; } }, 3000); return false; }
 $("#postList").addEventListener("click", async e => {
   const post = e.target.closest(".post"); if (!post) return; const id = post.dataset.id;
+  const del = e.target.closest(".act.del");
+  if (del && A.admin) { if (!confirmTwice(del, "삭제", "한 번 더 누르면 삭제")) return; await write(async () => { for (const c of A.comments.filter(c => c.post === id)) await A.db.doc("comments/" + c.id).delete(); await A.db.doc("posts/" + id).delete(); }, "글을 삭제했어요"); return; }
+  const cdel = e.target.closest(".cdel");
+  if (cdel && A.admin) { if (!confirmTwice(cdel, "×", "삭제?")) return; await write(() => A.db.doc("comments/" + cdel.closest(".cmt").dataset.cid).delete(), "댓글을 삭제했어요"); return; }
   const like = e.target.closest(".like");
   if (like) {
     if (!me()) { toast("로그인하면 좋아요를 누를 수 있어요.", 0, true); return; }
@@ -1292,7 +1335,8 @@ $("#postList").addEventListener("submit", async e => {
   const inp = $("input", f), v = inp.value.trim(); if (!v) { inp.classList.add("bad"); inp.focus(); return; }
   const n = await ensureNick(); const pid = f.closest(".post").dataset.id;
   inp.value = "";
-  if (await write(() => A.db.collection("comments").doc(newId()).set({post: pid, body: v, nick: n, at: Date.now()}))) { await savePriv({comments: (A.priv.comments || 0) + 1}); toast("댓글을 남겼어요", 3); paintPts(); }
+  const cid = newId();
+  if (await write(() => A.db.collection("comments").doc(cid).set({post: pid, body: v, nick: n, at: Date.now()}))) { await savePriv({comments: (A.priv.comments || 0) + 1, cids: [...(A.priv.cids || []), cid]}); toast("댓글을 남겼어요", 3); paintPts(); }
   else inp.value = v;
 });
 let postBusy = false;
@@ -1359,11 +1403,14 @@ function paintCount() {
   if (isRevealed()) maybePublishReveal();
 }
 let revealPublished = false;
+let revealBusy = false;
 async function maybePublishReveal() {
-  if (revealPublished || !A.target || !A.canWrite || !A.loaded.reveals) return;
-  const cur = A.reveals[A.uid]; if (cur && cur.drawId === A.cfg.drawId && cur.to === A.target) { revealPublished = true; return; }
-  revealPublished = true;
-  try { await A.db.doc("reveal/" + A.uid).set({to: A.target, drawId: A.cfg.drawId, at: Date.now()}); } catch (e) { revealPublished = false; }
+  if (revealBusy || !isRevealed() || !me() || !A.canWrite || !A.loaded.reveals || !A.privLoaded || !A.loaded.assign) return;
+  if (drawn() && A.assign && A.assign.drawId === A.cfg.drawId && !A.target && !A.targetErr) return; // still opening the envelope
+  const body = {to: A.target || null, drawId: A.cfg.drawId || null, posts: (A.priv.posts || []).slice(), cids: (A.priv.cids || []).slice()};
+  const cur = A.reveals[A.uid];
+  if (cur && cur.to === body.to && cur.drawId === body.drawId && JSON.stringify(cur.posts || []) === JSON.stringify(body.posts) && JSON.stringify(cur.cids || []) === JSON.stringify(body.cids)) return;
+  revealBusy = true; try { await A.db.doc("reveal/" + A.uid).set({...body, at: Date.now()}); } catch (e) {} revealBusy = false;
 }
 let finBusy = false, finPlayed = false;
 $("#finPlay").addEventListener("click", async () => {
@@ -1383,29 +1430,71 @@ $("#finPlay").addEventListener("click", async () => {
     await wait(500);
   }
   const ids = Object.keys(A.entries);
-  steps.insertAdjacentHTML("beforeend", `<div class="fin-step"><h2>Every pair, revealed</h2><p>${ids.length}명의 마니또 관계 · 아직 접속하지 않은 사람의 카드는 접속하면 채워집니다</p><div class="pairs" id="pairs"></div></div>`);
-  scroll(steps.lastElementChild, "start");
-  const pairs = $("#pairs");
-  pairs.innerHTML = ids.map(id => `<div class="pair ${id === A.uid || A.reveals[id]?.to === A.uid ? "me" : ""} ${A.reveals[id]?.drawId === A.cfg.drawId ? "" : "unknown"}"><div class="card-inner"><div class="face face-front"><div class="seal"></div></div><div class="face face-back"></div></div></div>`).join("");
+  const stat = id => { const sa = santaOf(id), g = A.guesses[id], gv = g && g.drawId === A.cfg.drawId && A.entries[g.pick] ? g.pick : null; return {sa, gv, hit: !!(sa && gv === sa)}; };
+  steps.insertAdjacentHTML("beforeend", `<div class="fin-step"><div class="fin-head"><div><h2>Every manitto, revealed</h2><p>${ids.length}명 · 내 마니또를 맞춘 사람은 빛나고, 못 맞춘 사람은 회색으로 남아요</p></div><div class="seg view-seg" role="group" aria-label="보기 방식"><button type="button" aria-pressed="true" data-v="cards">카드</button><button type="button" aria-pressed="false" data-v="map">관계도</button></div></div><div class="pairs" id="pairs"></div><div class="relmap" id="relmap" hidden>${relationSVG(ids, stat)}<div class="legend"><span><i style="background:var(--gold)"></i>맞춘 사람</span><span><i style="background:#9DA29A"></i>못 맞춘 사람</span><span><i style="background:transparent;border:1px dashed var(--ivory)"></i>아직 확인 전</span></div><p class="aw-sub" style="text-align:center">화살표는 챙겨 준 사람에서 챙김 받은 사람으로 이어집니다</p></div></div>`);
+  const s2 = steps.lastElementChild; scroll(s2, "start");
+  let mapDrawn = false;
+  $(".view-seg", s2).addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return; const v = b.dataset.v;
+    $$(".view-seg button", s2).forEach(x => x.setAttribute("aria-pressed", x === b));
+    $("#pairs", s2).hidden = v !== "cards"; $("#relmap", s2).hidden = v !== "map";
+    if (v === "map" && !mapDrawn) { mapDrawn = true; requestAnimationFrame(() => $$("#relmap .edge", s2).forEach((ln, k) => setTimeout(() => ln.style.strokeDashoffset = "0", RM ? 0 : k * 140))); }
+  });
+  const pairs = $("#pairs", s2);
+  pairs.innerHTML = ids.map(id => `<div class="pair ${id === A.uid ? "me" : ""}"><div class="card-inner"><div class="face face-front"><div class="seal"></div></div><div class="face face-back"></div></div></div>`).join("");
   await wait(400);
-  for (let i = 0; i < ids.length; i++) { const r = A.reveals[ids[i]], ok = r && r.drawId === A.cfg.drawId; $(".face-back", pairs.children[i]).innerHTML = `<div class="g">${esc(nameOf(ids[i]))}</div><div class="ar">GIVES TO</div><div class="r">${ok ? esc(nameOf(r.to)) : "확인 전"}</div>`; pairs.children[i].classList.add("flip"); await wait(150); }
-  await wait(600);
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i], t = stat(id), el = pairs.children[i];
+    $(".face-back", el).innerHTML = `<div class="r">${esc(nameOf(id))}</div><div class="ar">나를 챙긴 사람</div><div class="g">${t.sa ? esc(nameOf(t.sa)) : "확인 전"}</div><div class="gs">${t.gv ? (t.hit ? "맞췄어요" : `예상: ${esc(nameOf(t.gv))}`) : "예상 안 함"}</div>`;
+    el.classList.add("flip"); await wait(160); el.classList.add(t.hit ? "hit" : "miss");
+  }
+  await wait(900);
   const st = standings();
   steps.insertAdjacentHTML("beforeend", `<div class="fin-step"><h2>Final standings</h2><p>최종 포인트</p><div class="paper rank" id="finRank">${rankRows(st, 5)}</div></div>`);
   scroll(steps.lastElementChild); await wait(400);
   $$("#finRank .rk").forEach((r, i) => setTimeout(() => { const f = $(".fill", r); f.style.width = f.dataset.w + "%"; countUp($(".pt", r), 0, +$(".pt", r).dataset.p, 1200); }, i * 120));
   await wait(1700);
-  const topPts = st[0], topGift = st.slice().sort((a, b) => b[2] - a[2])[0];
+  const topGift = st.slice().sort((a, b) => b[2] - a[2])[0];
   const detectives = rv.filter(([giver, r]) => A.guesses[r.to]?.drawId === A.cfg.drawId && A.guesses[r.to]?.pick === giver).map(([, r]) => r.to);
-  steps.insertAdjacentHTML("beforeend", `<div class="fin-step"><h2>Awards</h2><p>올해의 시상</p><div class="awards">
-    <div class="paper award"><div class="medal">선</div><div class="t">Gift Champion</div><div class="w">${topGift && topGift[2] ? esc(nameOf(topGift[0])) : "-"}</div><div class="d muted">${topGift && topGift[2] ? `받은 사람이 인정한 선물 ${topGift[2]}회` : "인정된 선물이 없어요"}</div></div>
-    <div class="paper award first"><div class="medal">1</div><div class="t">Manitto of the Year</div><div class="w">${topPts ? esc(nameOf(topPts[0])) : "-"}</div><div class="d muted">${topPts ? `${topPts[1]}P` : ""}</div></div>
-    <div class="paper award"><div class="medal">탐</div><div class="t">Detectives</div><div class="w" style="font-size:18px">${detectives.length ? `${detectives.length}명` : "없음"}</div><div class="d muted">${detectives.length ? detectives.map(id => esc(nameOf(id))).join(", ") : "아무도 맞추지 못했어요"}</div></div></div></div>`);
+  const sus = {}; for (const [u, g] of Object.entries(A.guesses)) if (g && g.drawId === A.cfg.drawId && A.entries[u] && A.entries[g.pick]) sus[g.pick] = (sus[g.pick] || 0) + 1;
+  const topSus = Object.entries(sus).sort((a, b) => b[1] - a[1]);
+  const podium = (rows, label, unit) => { const cell = (r, rank) => `<div class="paper award ${rank === 1 ? "first" : ""}"><div class="medal ${rank > 1 ? "m" + rank : ""}">${rank}</div><div class="t">${label} ${rank}위</div><div class="w">${r ? esc(nameOf(r[0])) : "-"}</div><div class="d muted">${r ? unit(r) : "&nbsp;"}</div></div>`; return cell(rows[1], 2) + cell(rows[0], 1) + cell(rows[2], 3); };
+  steps.insertAdjacentHTML("beforeend", `<div class="fin-step"><h2>Awards</h2><p>올해의 시상</p>
+    <h3 class="aw-h">포인트 TOP 3</h3><p class="aw-sub">미션, 선물, 게시판 활동으로 모은 포인트</p>
+    <div class="awards">${podium(st, "포인트", r => `${r[1]}P`)}</div>
+    <h3 class="aw-h">가장 마니또 같았던 사람 TOP 3</h3><p class="aw-sub">맞고 틀리고와 상관없이 '내 마니또 같다'고 가장 많이 지목받은 사람</p>
+    <div class="awards">${topSus.length ? podium(topSus, "지목", r => `${r[1]}표`) : `<div class="paper award in" style="grid-column:1/-1"><div class="w" style="font-size:16px">지목한 사람이 없어요</div></div>`}</div>
+    <h3 class="aw-h">특별상</h3>
+    <div class="awards duo">
+      <div class="paper award"><div class="medal">선</div><div class="t">Gift Champion</div><div class="w">${topGift && topGift[2] ? esc(nameOf(topGift[0])) : "-"}</div><div class="d muted">${topGift && topGift[2] ? `받은 사람이 인정한 선물 ${topGift[2]}회` : "인정된 선물이 없어요"}</div></div>
+      <div class="paper award"><div class="medal">탐</div><div class="t">Detectives</div><div class="w" style="font-size:18px">${detectives.length ? `${detectives.length}명` : "없음"}</div><div class="d muted">${detectives.length ? detectives.map(id => esc(nameOf(id))).join(", ") : "아무도 맞추지 못했어요"}</div></div>
+    </div></div>`);
   const s4 = steps.lastElementChild; scroll(s4); await wait(400);
-  const aw = $$(".award", s4); [1, 0, 2].forEach((k, j) => setTimeout(() => aw[k].classList.add("in"), j * 280));
+  $$(".award:not(.in)", s4).forEach((a, j) => setTimeout(() => a.classList.add("in"), RM ? 0 : j * 220));
   await wait(900); confetti();
   finBusy = false; finPlayed = true; b.disabled = false; b.textContent = "다시 보기";
 });
+function relationSVG(ids, stat) {
+  const to = {}; for (const [g, r] of Object.entries(A.reveals)) if (r.drawId === A.cfg.drawId && r.to && A.entries[g] && A.entries[r.to]) to[g] = r.to;
+  // walk the chains so each arrow joins neighbours on the ring
+  const order = [], seen = new Set(), hasGiver = new Set(Object.values(to));
+  const walk = s => { let c = s; while (c && !seen.has(c) && A.entries[c]) { seen.add(c); order.push(c); c = to[c]; } };
+  ids.filter(id => !hasGiver.has(id)).forEach(walk); ids.forEach(walk);
+  const n = order.length, W = 640, C = 320, R = n > 14 ? 230 : 200, pos = {};
+  order.forEach((id, k) => { const a = -Math.PI / 2 + k * 2 * Math.PI / Math.max(n, 1); pos[id] = [C + R * Math.cos(a), C + R * Math.sin(a), a]; });
+  let edges = "", nodes = "";
+  for (const [g, r] of Object.entries(to)) {
+    const [x1, y1] = pos[g], [x2, y2] = pos[r], dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const ax = x1 + ux * 14, ay = y1 + uy * 14, bx = x2 - ux * 16, by = y2 - uy * 16, len = Math.hypot(bx - ax, by - ay).toFixed(1);
+    edges += `<path class="edge ${stat(r).hit ? "gold" : ""}" d="M${ax.toFixed(1)} ${ay.toFixed(1)}L${bx.toFixed(1)} ${by.toFixed(1)}" marker-end="url(#${stat(r).hit ? "ahg" : "ah"})" style="stroke-dasharray:${len};stroke-dashoffset:${RM ? 0 : len}"/>`;
+  }
+  for (const id of order) {
+    const [x, y, a] = pos[id], t = stat(id), known = !!t.sa || !!to[id], col = t.hit ? "var(--gold)" : known ? "#9DA29A" : "transparent";
+    const lx = C + (R + 26) * Math.cos(a), ly = C + (R + 26) * Math.sin(a), anchor = Math.abs(Math.cos(a)) < .25 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
+    nodes += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="${col}" stroke="var(--ivory)" stroke-width="${t.hit ? 0 : 1.5}" ${known ? "" : 'stroke-dasharray="3 3"'}/>${t.hit ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="16" fill="none" stroke="var(--gold)" stroke-opacity=".25" stroke-width="1.5"/>` : ""}<text x="${lx.toFixed(1)}" y="${(ly + 6).toFixed(1)}" text-anchor="${anchor}" class="${t.hit ? "" : "miss"}">${esc(nameOf(id))}</text>`;
+  }
+  return `<svg viewBox="-60 -10 ${W + 120} ${W + 20}" role="img" aria-label="마니또 관계도"><defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="rgba(248,246,240,.7)"/></marker><marker id="ahg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#C9AA6E"/></marker></defs>${edges}${nodes}</svg>`;
+}
 function confetti() {
   if (RM) return; const c = $("#confetti"), x = c.getContext("2d"); c.width = innerWidth * devicePixelRatio; c.height = innerHeight * devicePixelRatio; x.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   const cols = ["#C9AA6E", "#F8F6F0", "#E2592B", "#62A86C"], ps = Array.from({length: 140}, () => ({x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .55, vx: (Math.random() - .5) * 14, vy: -8 - Math.random() * 10, r: Math.random() * 6.28, vr: (Math.random() - .5) * .3, w: 5 + Math.random() * 6, h: 3 + Math.random() * 4, c: cols[Math.random() * 4 | 0]})), t0 = performance.now();
@@ -1633,7 +1722,7 @@ $("#introSkip").addEventListener("click", endIntro); $("#intro").addEventListene
 const VIEWS = ["home", "login", "manitto", "gift", "board", "guess", "finale", "admin"];
 let current = null, raf = 0;
 const PAINT = {home: paintHome, login: paintLogin, manitto: paintManitto, gift: paintGift, board: paintBoard, guess: paintGuess, finale: paintCount, admin: paintAdmin};
-function refresh() { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { paintHeader(); paintPts(); scheduleScore(); PAINT[current]?.(); }); }
+function refresh() { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { paintHeader(); paintPts(); scheduleScore(); if (isRevealed()) maybePublishReveal(); PAINT[current]?.(); }); }
 function route() {
   let v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   if (v === "admin" && !A.admin && A.mode !== "firebase") v = "home";
@@ -1656,9 +1745,18 @@ addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
 setInterval(() => { paintHeader(); if (isRevealed()) maybePublishReveal(); if (current === "guess") paintGuess(); }, 30000);
 
 /* ================= data wiring ================= */
+function dbNotice(html) { const g = $("#globalNotice"); if (g.dataset.err) return; g.innerHTML = `<div class="notice"><span>${html}</span></div>`; g.hidden = false; }
 function sub(ref, key, onData) {
-  const timer = setTimeout(() => { if (!A.loaded[key]) { const g = $("#globalNotice"); if (!g.innerHTML) { g.innerHTML = `<div class="notice">저장 서버 연결이 늦어지고 있어요. 네트워크를 확인해 주세요. 연결되면 자동으로 채워집니다.</div>`; g.hidden = false; } } }, 10000);
-  return ref.onSnapshot(s => { if (!s.metadata || !s.metadata.fromCache) clearTimeout(timer); A.loaded[key] = true; onData(s); refresh(); }, err => { clearTimeout(timer); A.loaded[key] = true; console.warn(key, err); refresh(); });
+  const timer = setTimeout(() => { if (!A.loaded[key]) dbNotice(A.mode === "firebase"
+    ? `<b>저장 서버가 응답하지 않아요.</b> Firebase 콘솔에서 Firestore Database를 만들었는지 확인해 주세요. 만들었다면 회사 네트워크, VPN, 광고 차단기가 막고 있을 수 있어요. 휴대폰 데이터로 열어 보면 원인을 가릴 수 있습니다.`
+    : `저장 서버 연결이 늦어지고 있어요. 네트워크를 확인해 주세요. 연결되면 자동으로 채워집니다.`); }, 10000);
+  return ref.onSnapshot(s => { if (!s.metadata || !s.metadata.fromCache) clearTimeout(timer); A.loaded[key] = true; onData(s); refresh(); }, err => {
+    clearTimeout(timer); A.loaded[key] = true; console.warn("[manitto]", key, err && err.code, err && err.message);
+    const code = err && err.code;
+    if (A.mode === "firebase" && code === "permission-denied") { dbNotice(`<b>보안 규칙이 막고 있어요.</b> Firebase 콘솔 → Firestore Database → 규칙 탭에 firestore.rules 내용을 붙여 넣고 [게시]를 눌렀는지, Authentication에서 '익명' 로그인을 켰는지 확인해 주세요.`); $("#globalNotice").dataset.err = "1"; }
+    else if (A.mode === "firebase" && code) { dbNotice(`<b>저장 서버 오류</b> (${esc(code)}) · ${esc(err.message || "")}`); $("#globalNotice").dataset.err = "1"; }
+    refresh();
+  });
 }
 const colMap = s => Object.fromEntries(s.docs.map(d => [d.id, d.data()]));
 const colArr = s => s.docs.map(d => ({id: d.id, ...d.data()}));
@@ -1685,7 +1783,7 @@ async function init() {
     } else if (CFG && CFG.firebase && CFG.firebase.apiKey && window.firebase) {
       A.mode = "firebase"; A.db = await connectFirebase(CFG); A.admin = fbIsAdmin();
     } else { A.mode = "preview"; A.db = await makeMock(); A.admin = true; }
-  } catch (e) { console.error(e); A.db = null; }
+  } catch (e) { console.error("[manitto] connect failed", e); A.db = null; A.connectErr = e && (e.code || e.message); }
   paintGlobal();
   if (!A.db) { route(); refresh(); return; }
   const db = A.db;
