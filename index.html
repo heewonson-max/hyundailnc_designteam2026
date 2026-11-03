@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="한 사람을 몰래 챙기는 우리 팀 크리스마스 마니또">
+<meta name="description" content="올해도 돌아온 디자인팀 마니또">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Secret Manitto 2026</title>
+<title>디자인팀 마니또 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@400;700&display=swap">
@@ -527,7 +527,7 @@ button.mission{width:100%;background:none;border-left:0;border-right:0;border-bo
   <canvas id="stars"></canvas>
   <svg class="intro-mark" viewBox="0 0 64 64" fill="none"><rect x="6" y="14" width="52" height="38" rx="6" stroke="#F8F6F0" stroke-width="3.5"/><path d="M8 17l24 19 24-19" stroke="#F8F6F0" stroke-width="3.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="6" fill="#E2592B"/></svg>
   <div class="intro-word" id="introWord"></div>
-  <div class="intro-sub">a quiet christmas, kept in envelopes</div>
+  <div class="intro-sub">a quiet kindness, kept in envelopes</div>
   <button class="btn btn-ghost btn-sm intro-skip" id="introSkip" type="button">입장하기</button>
 </div>
 
@@ -569,9 +569,9 @@ button.mission{width:100%;background:none;border-left:0;border-right:0;border-bo
       <div class="home-grid">
         <div class="col col-a" id="colA">
           <div class="hero">
-            <div class="eyebrow">Secret Manitto · Winter 2026</div>
+            <div class="eyebrow">Design Team Manitto · 2026</div>
             <h1>Someone is quietly <em>looking after</em> you.</h1>
-            <p class="lead" id="lead">한 사람을 몰래 챙기는 우리 팀 크리스마스. 정체는 공개일 저녁에 함께 밝혀집니다.</p>
+            <p class="lead" id="lead">올해도 돌아온 디자인팀 마니또! 2주 동안 한 사람을 몰래 챙겨 주세요. 정체는 마지막 날 저녁에 함께 공개됩니다.</p>
             <div class="stats">
               <div class="stat"><div class="n tnum" id="statN">0</div><div class="k">참가자</div></div>
               <div class="stat"><div class="n tnum" id="statD">0</div><div class="k">공개까지 남은 날</div></div>
@@ -808,6 +808,15 @@ button.mission{width:100%;background:none;border-left:0;border-right:0;border-bo
           </div>
         </div>
         <div class="paper panel" style="margin-top:28px">
+          <h2>미션<small>참가자마다 순서를 다르게 섞어서 매주 2개씩, 2주 동안 모두 4개를 보여 줍니다. 한 사람에게 같은 미션은 다시 나오지 않아요.</small></h2>
+          <div class="status" id="mStat"></div>
+          <form class="form" id="mAddForm" novalidate style="margin-top:4px">
+            <div class="field"><label class="label" for="mNew">새 미션 (여러 개는 한 줄에 하나씩)</label><textarea class="textarea" id="mNew" maxlength="2000" placeholder="출근 전 책상에 따뜻한 음료 두기&#10;포스트잇에 응원 한 줄 남기기"></textarea><div class="err" id="mNewErr"></div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ink" type="submit" id="mAdd">미션 추가하기</button><button class="btn btn-ghost" type="button" id="mStarter" style="color:var(--ink);border-color:var(--line)">기본 미션 다시 넣기</button><button class="btn btn-ghost" type="button" id="mClear" style="color:var(--err);border-color:var(--line)" hidden>모두 삭제</button></div>
+          </form>
+          <div id="mList" style="margin-top:18px"></div>
+        </div>
+        <div class="paper panel" style="margin-top:28px">
           <h2>참가자<small>신청서를 낸 사람 목록입니다. 비밀번호를 잊은 사람은 신청서를 삭제한 뒤 다시 신청하면 됩니다. 배정 뒤에 삭제하면 다시 배정해야 해요.</small></h2>
           <div id="adminPeople" style="margin-top:12px"></div>
         </div>
@@ -856,17 +865,31 @@ try {
 } catch (e) {}
 
 /* ================= constants ================= */
-const MISSIONS = [
-  "출근 전 책상에 따뜻한 음료 두기","포스트잇에 응원 한 줄 남기기","좋아하는 간식 몰래 채워 두기","점심 메뉴 추천 쪽지 남기기",
-  "퇴근길에 들을 노래 추천 쪽지 보내기","책상 위에 작은 화분이나 꽃 한 송이 두기","손글씨 칭찬 카드 전하기","마니또가 좋아하는 색의 소품 선물하기",
-  "회의 끝나고 수고했다는 메모 남기기","마니또 자리 근처 정리 몰래 돕기","오늘 날씨에 맞는 한마디 남기기","핫팩이나 손난로 챙겨 두기",
-  "마니또의 장점 세 가지를 적은 카드 전하기","익명 게시판에 마니또 칭찬 글 쓰기","비타민 한 알과 응원 쪽지 챙겨 두기","금요일에 주말 잘 보내라는 쪽지 남기기",
-  "월요일 아침 기운 나는 간식 두기","마니또 관심사에 맞는 기사나 책 추천하기","크리스마스 카드 미리 써 두기","마니또에게 어울리는 캐럴 한 곡 추천하기"];
-const PER_WEEK = 3, MAX_WEEKS = Math.floor(MISSIONS.length / PER_WEEK); // 6 weeks, no repeats per person
+const STARTER_MISSIONS = [
+  "마니또가 좋아하는 음식이나 음료 알아내기",
+  "마니또에게 먼저 인사하고 밝게 웃어주기 3회",
+  "마니또와 공통 관심사 1가지 찾아내기",
+  "마니또의 새로운 모습이나 스타일 칭찬하기 1회",
+  "마니또에게 응원의 한마디 전하기 1회",
+  "마니또에게 커피 또는 간식 사주기 1회",
+  "마니또와 밥 한 끼 같이 먹기",
+  "마니또에게 무조건적인 칭찬 3회 하기",
+  "마니또에게 오늘의 TMI 하나 공유하기",
+  "마니또와 함께 사진 한 장 찍기",
+  "마니또에게 도움주기 1회",
+  "마니또를 웃게 해주기 1회",
+  "마니또 책상에 손편지나 쪽지 몰래 두기 1회",
+  "마니또에게 추천하고 싶은 노래나 영상 공유하기 1회",
+  "마니또의 하루 이야기 끝까지 들어주기 1회",
+  "마니또 몰래 작은 선물 두고 오기 1회",
+];
+// fixed ids so completed missions stay checked when the admin later edits the list
+const DEFAULT_MISSIONS = STARTER_MISSIONS.map((t, i) => ({id: "s" + (i + 1), t}));
+const PER_WEEK = 2, MISSION_WEEKS = 2; // 2 missions a week for 2 weeks = 4 per person; each person walks one fixed order, so nobody sees a mission twice
 const ANIMALS = ["순록","눈사람","올빼미","다람쥐","북극곰","여우","전나무","펭귄","고슴도치","수달","부엉이","토끼"];
 const ACOL = ["#B9431D","#5E7B8C","#8F7442","#9A5B3C","#6E7068","#E2592B","#4D945A","#2B3A33","#7A6A55","#3F6F7A","#8A5A44","#A36F5A"];
 const PCOL = ["#4D945A","#E2592B","#5E7B8C","#8F7442","#2B3A33","#9A5B3C","#3F6F7A","#B9431D"];
-const DEF_REVEAL = Date.parse("2026-12-24T18:00:00+09:00"), DEF_START = Date.parse("2026-11-16T00:00:00+09:00");
+const DEF_REVEAL = Date.parse("2026-11-27T19:00:00+09:00"), DEF_START = Date.parse("2026-11-12T00:00:00+09:00");
 
 /* ================= small utils ================= */
 function hashStr(s) { let h = 1779033703 ^ s.length; for (let i = 0; i < s.length; i++) { h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; } return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); return (h ^= h >>> 16) >>> 0; }; }
@@ -940,7 +963,7 @@ const A = {
   mode: "preview", db: null, fbAuth: null, admin: false, canWrite: true, loaded: {},
   uid: null, aes: null, keys: null, // uid = the logged-in participant
   cfg: {revealAt: DEF_REVEAL, start: DEF_START, drawId: null, drawnAt: null, drawN: 0},
-  entries: {}, assign: null, target: null, targetErr: false,
+  entries: {}, missions: [], assign: null, target: null, targetErr: false,
   priv: defPriv(), privLoaded: false,
   posts: [], comments: [], likes: {}, scores: {}, guesses: {}, reveals: {}, rMineAll: [], rTargetAll: [],
   get rMine() { return this.rMineAll.filter(r => r.drawId === this.cfg.drawId); },
@@ -1072,14 +1095,15 @@ function paintHeader() {
 }
 function weekInfo() {
   const start = A.cfg.start || DEF_START, w = Math.floor((Date.now() - start) / (7 * DAY));
-  const total = Math.max(1, Math.min(MAX_WEEKS, Math.ceil((revealAt() - start) / (7 * DAY))));
+  const total = Math.max(1, Math.min(MISSION_WEEKS, Math.ceil((revealAt() - start) / (7 * DAY))));
   const idx = Math.max(0, Math.min(total - 1, w));
-  return {idx, total, before: Date.now() < start, from: start + idx * 7 * DAY, to: start + idx * 7 * DAY + 6 * DAY};
+  const last = idx === total - 1; // the last mission week runs until the reveal
+  return {idx, total, before: Date.now() < start, from: start + idx * 7 * DAY, to: last ? revealAt() : start + idx * 7 * DAY + 6 * DAY};
 }
 function paintHome() {
   $("#statN").textContent = Object.keys(A.entries).length;
   $("#statGifts").textContent = Object.values(A.scores).reduce((s, x) => s + (x.gifts || 0), 0);
-  $("#lead").textContent = `한 사람을 몰래 챙기는 우리 팀 크리스마스. 정체는 ${fmt(revealAt())}에 함께 공개됩니다.`;
+  $("#lead").textContent = `올해도 돌아온 디자인팀 마니또! 2주 동안 한 사람을 몰래 챙겨 주세요. 정체는 ${fmt(revealAt())}에 함께 공개됩니다.`;
   let cta = "";
   if (A.db) {
     if (!me()) cta = `<a class="btn btn-ribbon" href="#login">참가 신청 · 로그인</a>`;
@@ -1090,7 +1114,7 @@ function paintHome() {
   $("#homeCta").innerHTML = cta;
   const wi = weekInfo();
   $("#schedule").innerHTML = [
-    [fmt(A.cfg.start || DEF_START, false), `미션 1주차 시작 · 매주 3개씩`, Date.now() < (A.cfg.start || DEF_START)],
+    [fmt(A.cfg.start || DEF_START, false), `미션 시작 · 1인당 매주 2개씩 총 4개`, Date.now() < (A.cfg.start || DEF_START)],
     [drawn() ? fmt(A.cfg.drawnAt, false) : "배정 전", drawn() ? `마니또 배정 완료 · ${A.cfg.drawN}명` : "신청서를 낸 사람끼리 배정", !drawn()],
     [fmt(guessDeadline()), "마니또 맞추기 마감", false],
     [fmt(revealAt()), "최종 공개와 시상", false],
@@ -1119,7 +1143,9 @@ function paintManitto() {
   paintMissions(); paintMemo();
 }
 function myMissions() {
-  const wi = weekInfo(), order = shuffled(MISSIONS.map((_, i) => i), rng(A.uid + "|" + (A.cfg.drawId || "pre")));
+  // stable per-person order: each mission gets a rank from (person, draw, mission), so adding or removing one barely moves the rest
+  const wi = weekInfo(), seed = A.uid + "|" + (A.cfg.drawId || "pre") + "|";
+  const order = A.missions.map(m => [m, hashStr(seed + m.id)()]).sort((a, b) => a[1] - b[1]).map(x => x[0]);
   return {wi, list: order.slice(wi.idx * PER_WEEK, wi.idx * PER_WEEK + PER_WEEK)};
 }
 function paintMissions() {
@@ -1127,7 +1153,9 @@ function paintMissions() {
   if (!opened) { $("#wkLabel").textContent = "봉투를 열면 이번 주 미션이 보입니다."; $("#missions").innerHTML = ""; return; }
   const {wi, list} = myMissions();
   $("#wkLabel").innerHTML = wi.before ? `미션은 ${fmt(A.cfg.start, false)}부터 시작해요. 1주차 미션을 미리 보여 드릴게요.` : `<span class="wk"><span class="badge badge-gold">Week ${wi.idx + 1} / ${wi.total}</span>${fmt(wi.from, false)}–${fmt(wi.to, false)} · 완료할 때마다 15포인트</span>`;
-  $("#missions").innerHTML = list.map(i => { const on = !!A.priv.missions[i]; return `<button type="button" class="mission" aria-pressed="${on}" data-i="${i}" ${wi.before ? "disabled" : ""}><span class="check"><svg viewBox="0 0 14 14" fill="none"><path d="M3 7.5l2.6 2.5L11 4.5" stroke="#fff" stroke-width="2"/></svg></span><span class="mt">${esc(MISSIONS[i])}</span><span class="mp">+15</span></button>`; }).join("");
+  if (!A.missions.length) { $("#missions").innerHTML = `<p class="memo-empty">관리자가 미션을 준비하고 있어요.</p>`; return; }
+  if (!list.length) { $("#missions").innerHTML = `<p class="memo-empty">이번 주 미션이 아직 없어요. 관리자가 미션을 더 추가하면 나타납니다.</p>`; return; }
+  $("#missions").innerHTML = list.map(m => { const on = !!A.priv.missions[m.id]; return `<button type="button" class="mission" aria-pressed="${on}" data-i="${esc(m.id)}" ${wi.before ? "disabled" : ""}><span class="check"><svg viewBox="0 0 14 14" fill="none"><path d="M3 7.5l2.6 2.5L11 4.5" stroke="#fff" stroke-width="2"/></svg></span><span class="mt">${esc(m.t)}</span><span class="mp">+15</span></button>`; }).join("");
 }
 function paintMemo() {
   const opened = drawn() && A.priv.openedDraw === A.cfg.drawId && A.target;
@@ -1348,8 +1376,8 @@ $("#finPlay").addEventListener("click", async () => {
   const scroll = (el, block = "center") => el.scrollIntoView({behavior: RM ? "auto" : "smooth", block});
   if (me() && A.assign) {
     const santa = santaOf(A.uid);
-    steps.insertAdjacentHTML("beforeend", `<div class="fin-step"><h2>Your secret Santa</h2><p>지금까지 당신을 챙긴 사람</p><div class="stage" style="min-height:420px;margin-top:20px"><div class="env" id="env2"></div></div></div>`);
-    scroll(steps.lastElementChild); const e2 = makeEnvelope($("#env2"), "merry christmas"); await wait(700);
+    steps.insertAdjacentHTML("beforeend", `<div class="fin-step"><h2>Who looked after you</h2><p>지난 2주 동안 나를 몰래 챙겨 준 사람</p><div class="stage" style="min-height:420px;margin-top:20px"><div class="env" id="env2"></div></div></div>`);
+    scroll(steps.lastElementChild); const e2 = makeEnvelope($("#env2"), "it was you"); await wait(700);
     const g = myGuess();
     await e2.play(santa ? `<div class="k">From</div><div class="who">${esc(nameOf(santa))}</div><div class="meta">${g ? (g.pick === santa ? "맞췄어요!" : `내 예상은 ${esc(nameOf(g.pick))}님이었어요`) : esc(A.entries[santa]?.dept || "")}</div>` : `<div class="k">From</div><div class="who" style="font-size:20px">아직 확인 전</div><div class="meta">마니또가 접속하면 이름이 나타나요</div>`);
     await wait(500);
@@ -1397,6 +1425,7 @@ function paintAdmin() {
   $("#drawBtn").textContent = drawn() ? "다시 배정하기" : "마니또 배정하기";
   $("#drawBtn").disabled = drawBusy || n < 3;
   const ids = Object.keys(A.entries).sort((a, b) => (A.entries[a].at || 0) - (A.entries[b].at || 0));
+  paintMissionAdmin();
   $("#adminPeople").innerHTML = ids.length ? ids.map(id => `<div class="apoll" data-id="${id}"><div class="q">${esc(nameOf(id))}<small>${esc(A.entries[id].dept || "")} · ${fmt(A.entries[id].at || Date.now())} 신청</small></div><button class="btn btn-ghost btn-sm" type="button" data-act="del" style="color:var(--err);border-color:var(--line)">신청서 삭제</button></div>`).join("") : `<p class="memo-empty">아직 신청서가 없어요.</p>`;
 }
 $("#cfgForm").addEventListener("submit", async e => {
@@ -1442,6 +1471,53 @@ $("#adminLoginForm").addEventListener("submit", async e => {
   b.disabled = false; refresh();
 });
 $("#adminOut").addEventListener("click", async () => { if (!A.fbAuth) return; await A.fbAuth.signOut(); location.hash = "#home"; location.reload(); });
+
+/* ================= ADMIN · missions ================= */
+const MAX_LEN = 80;
+function weeksNeeded() { const start = A.cfg.start || DEF_START; return Math.max(1, Math.min(MISSION_WEEKS, Math.ceil((revealAt() - start) / (7 * DAY)))); }
+function paintMissionAdmin() {
+  const list = A.missions, n = list.length, cap = Math.floor(n / PER_WEEK), need = weeksNeeded();
+  $("#mStat").innerHTML = `<b class="tnum">${n}</b><span>개 ${A.missionsCustom ? "등록" : "(기본 미션)"} · 참가자마다 이 중 ${need * PER_WEEK}개가 무작위로 나와요 (매주 ${PER_WEEK}개 × ${need}주)${n && n < need * PER_WEEK ? ` <span style="color:var(--ribbon-deep)">· ${need * PER_WEEK - n}개 더 필요해요</span>` : ""}</span>`;
+  $("#mClear").hidden = !n; $("#mStarter").hidden = n > 0;
+  if (!n) { $("#mList").innerHTML = `<p class="memo-empty">미션이 없어요. 위에 적어서 추가하거나 기본 미션을 다시 넣으세요.</p>`; return; }
+  if ($("#mList").querySelector(".medit")) return; // don't clobber an edit in progress
+  $("#mList").innerHTML = list.map((m, i) => `<div class="apoll" data-id="${esc(m.id)}"><span class="tnum" style="width:28px;color:var(--sub);font-family:var(--f-display);font-weight:700">${i + 1}</span><div class="q mtext">${esc(m.t)}</div><button class="btn btn-ghost btn-sm" type="button" data-act="edit" style="color:var(--ink);border-color:var(--line)">수정</button><button class="btn btn-ghost btn-sm" type="button" data-act="del" style="color:var(--err);border-color:var(--line)">삭제</button></div>`).join("");
+}
+async function saveMissions(list, msg) { return write(() => A.db.doc("config/missions").set({list: list.map(m => ({id: m.id, t: m.t})), at: Date.now()}), msg); }
+const parseLines = v => v.split("\n").map(s => s.trim()).filter(Boolean);
+$("#mAddForm").addEventListener("submit", async e => {
+  e.preventDefault(); const lines = parseLines($("#mNew").value);
+  if (!lines.length) { $("#mNewErr").textContent = "추가할 미션을 적어 주세요."; return; }
+  const long = lines.find(l => l.length > MAX_LEN); if (long) { $("#mNewErr").textContent = `미션은 ${MAX_LEN}자 이내로 적어 주세요: "${long.slice(0, 20)}…"`; return; }
+  const have = new Set(A.missions.map(m => m.t)), fresh = lines.filter(l => !have.has(l));
+  if (!fresh.length) { $("#mNewErr").textContent = "이미 있는 미션이에요."; return; }
+  $("#mNewErr").textContent = "";
+  if (await saveMissions([...A.missions, ...fresh.map(t => ({id: "m" + newId(), t}))], `미션 ${fresh.length}개를 추가했어요`)) $("#mNew").value = "";
+});
+$("#mNew").addEventListener("input", () => $("#mNewErr").textContent = "");
+$("#mStarter").addEventListener("click", () => saveMissions(DEFAULT_MISSIONS, `기본 미션 ${DEFAULT_MISSIONS.length}개를 다시 넣었어요`));
+$("#mClear").addEventListener("click", async e => {
+  const b = e.currentTarget;
+  if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "한 번 더 누르면 모두 삭제"; setTimeout(() => { delete b.dataset.sure; b.textContent = "모두 삭제"; }, 3500); return; }
+  delete b.dataset.sure; b.textContent = "모두 삭제"; await saveMissions([], "미션을 모두 삭제했어요");
+});
+$("#mList").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return; const row = b.closest(".apoll"), id = row.dataset.id, m = A.missions.find(x => x.id === id); if (!m) return;
+  if (b.dataset.act === "edit") {
+    row.innerHTML = `<form class="cmt-form medit" style="flex:1;min-width:0"><label class="sr" for="me-${esc(id)}">미션 수정</label><input class="input" id="me-${esc(id)}" maxlength="${MAX_LEN}"><button class="btn btn-ink btn-sm" type="submit">저장</button><button class="btn btn-ghost btn-sm" type="button" data-act="cancel" style="color:var(--ink);border-color:var(--line)">취소</button></form>`;
+    const inp = $("input", row); inp.value = m.t; inp.focus(); return;
+  }
+  if (b.dataset.act === "cancel") { row.querySelector(".medit").remove(); paintMissionAdmin(); return; }
+  if (b.dataset.act === "del") {
+    if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "한 번 더"; setTimeout(() => { if (b.isConnected) { delete b.dataset.sure; b.textContent = "삭제"; } }, 3000); return; }
+    await saveMissions(A.missions.filter(x => x.id !== id), "미션을 삭제했어요");
+  }
+});
+$("#mList").addEventListener("submit", async e => {
+  e.preventDefault(); const f = e.target.closest(".medit"); if (!f) return; const id = f.closest(".apoll").dataset.id, v = $("input", f).value.trim();
+  if (!v) { $("input", f).classList.add("bad"); return; }
+  f.remove(); await saveMissions(A.missions.map(x => x.id === id ? {...x, t: v} : x), "미션을 고쳤어요"); paintMissionAdmin();
+});
 
 /* ================= LOGIN ================= */
 const SESSION_KEY = "sm-session-v3";
@@ -1614,6 +1690,7 @@ async function init() {
   if (!A.db) { route(); refresh(); return; }
   const db = A.db;
   sub(db.doc("config/main"), "config", s => { const prev = A.cfg.drawId; A.cfg = {...A.cfg, ...(s.exists ? s.data() : {})}; if (prev !== A.cfg.drawId) { envShownFor = null; decryptAssign().then(refresh); } });
+  sub(db.doc("config/missions"), "missions", s => { const d = s.exists ? s.data() : null; A.missions = d && Array.isArray(d.list) ? d.list.filter(m => m && m.id && m.t) : DEFAULT_MISSIONS.slice(); A.missionsCustom = !!d; });
   sub(db.collection("entries"), "entries", s => { A.entries = colMap(s); if (A.uid && !A.entries[A.uid] && !s.metadata?.hasPendingWrites) logout(true); tryRestore(); });
   sub(db.collection("posts"), "posts", s => { A.posts = colArr(s); });
   sub(db.collection("comments"), "comments", s => { A.comments = colArr(s); });
